@@ -9,15 +9,11 @@ namespace ExtractText
 {
     class Program
     {
-        // Add your Computer Vision subscription key to your environment variables.
-        private const string subscriptionKey = Environment.GetEnvironmentVariable("COMPUTER_VISION_SUBSCRIPTION_KEY");
-
-        // For printed text, change to TextRecognitionMode.Printed
-        private const TextRecognitionMode textRecognitionMode =
-            TextRecognitionMode.Handwritten;
+        // subscriptionKey = "0123456789abcdef0123456789ABCDEF"
+        private const string subscriptionKey = "dd1ed6af47c64072b73595cb5bd7eeba";
 
         // localImagePath = @"C:\Documents\LocalImage.jpg"
-        private const string localImagePath = @"<LocalImage>";
+        private const string localImagePath = @"C:/Users/kbasa/Downloads/8001.jpg";
 
         private const string remoteImageUrl =
             "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Cursive_Writing_on_Notebook_paper.jpg/800px-Cursive_Writing_on_Notebook_paper.jpg";
@@ -30,17 +26,27 @@ namespace ExtractText
                 new ApiKeyServiceClientCredentials(subscriptionKey),
                 new System.Net.Http.DelegatingHandler[] { });
 
-            // Add your Computer Vision endpoint to your environment variables.
-            computerVision.Endpoint = Environment.GetEnvironmentVariable("COMPUTER_VISION_SUBSCRIPTION_KEY");
+            // You must use the same region as you used to get your subscription
+            // keys. For example, if you got your subscription keys from westus,
+            // replace "westcentralus" with "westus".
+            //
+            // Free trial subscription keys are generated in the westcentralus
+            // region. If you use a free trial subscription key, you shouldn't
+            // need to change the region.
+
+            // Specify the Azure region
+            computerVision.Endpoint = "https://westcentralus.api.cognitive.microsoft.com";
 
             Console.WriteLine("Images being analyzed ...");
-            var t1 = ExtractRemoteTextAsync(computerVision, remoteImageUrl);
+            //var t1 = ExtractRemoteTextAsync(computerVision, remoteImageUrl);
             var t2 = ExtractLocalTextAsync(computerVision, localImagePath);
 
-            Task.WhenAll(t1, t2).Wait(5000);
+            Task.WhenAll(t2).Wait(5000);
             Console.WriteLine("Press ENTER to exit");
             Console.ReadLine();
         }
+
+  
 
         // Read text from a remote image
         private static async Task ExtractRemoteTextAsync(
@@ -56,7 +62,7 @@ namespace ExtractText
             // Start the async process to read the text
             BatchReadFileHeaders textHeaders =
                 await computerVision.BatchReadFileAsync(
-                    imageUrl, textRecognitionMode);
+                    imageUrl);
 
             await GetTextAsync(computerVision, textHeaders.OperationLocation);
         }
@@ -77,7 +83,7 @@ namespace ExtractText
                 // Start the async process to recognize the text
                 BatchReadFileInStreamHeaders textHeaders =
                     await computerVision.BatchReadFileInStreamAsync(
-                        imageStream, textRecognitionMode);
+                        imageStream);
 
                 await GetTextAsync(computerVision, textHeaders.OperationLocation);
             }
@@ -92,7 +98,7 @@ namespace ExtractText
             string operationId = operationLocation.Substring(
                 operationLocation.Length - numberOfCharsInOperationId);
 
-            Console.WriteLine("\nCalling GetReadOperationResultAsync()");
+            Console.WriteLine("\nCalling GetHandwritingRecognitionOperationResultAsync()");
             ReadOperationResult result =
                 await computerVision.GetReadOperationResultAsync(operationId);
 
