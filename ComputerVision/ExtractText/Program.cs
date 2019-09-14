@@ -3,6 +3,7 @@ using Microsoft.Azure.CognitiveServices.Vision.ComputerVision.Models;
 
 using System;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ExtractText
@@ -10,7 +11,7 @@ namespace ExtractText
     class Program
     {
         // subscriptionKey = "0123456789abcdef0123456789ABCDEF"
-        private const string subscriptionKey = "dd1ed6af47c64072b73595cb5bd7eeba";
+        private const string subscriptionKey = "4f44ee46b2d7408dbc8f694f687fee41";
 
         // localImagePath = @"C:\Documents\LocalImage.jpg"
         private const string localImagePath = @"C:/Users/kbasa/Downloads/8001.jpg";
@@ -19,6 +20,7 @@ namespace ExtractText
             "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Cursive_Writing_on_Notebook_paper.jpg/800px-Cursive_Writing_on_Notebook_paper.jpg";
 
         private const int numberOfCharsInOperationId = 36;
+
 
         static void Main(string[] args)
         {
@@ -38,15 +40,17 @@ namespace ExtractText
             computerVision.Endpoint = "https://westcentralus.api.cognitive.microsoft.com";
 
             Console.WriteLine("Images being analyzed ...");
-            //var t1 = ExtractRemoteTextAsync(computerVision, remoteImageUrl);
-            var t2 = ExtractLocalTextAsync(computerVision, localImagePath);
 
-            Task.WhenAll(t2).Wait(5000);
-            Console.WriteLine("Press ENTER to exit");
+            //var t1 = ExtractRemoteTextAsync(computerVision, remoteImageUrl);
+            var t2 = Task.FromResult<string>(ExtractLocalTextAsync(computerVision, localImagePath).Result);
+
+            Console.WriteLine(t2.Result);
+            //Task.WhenAll(t2).Wait(5000);
+            //Console.WriteLine("Press ENTER to exit");
             Console.ReadLine();
         }
 
-  
+
 
         // Read text from a remote image
         private static async Task ExtractRemoteTextAsync(
@@ -68,14 +72,15 @@ namespace ExtractText
         }
 
         // Recognize text from a local image
-        private static async Task ExtractLocalTextAsync(
+        private static async Task<string> ExtractLocalTextAsync(
             ComputerVisionClient computerVision, string imagePath)
         {
+            string result = string.Empty;
             if (!File.Exists(imagePath))
             {
                 Console.WriteLine(
                     "\nUnable to open or read localImagePath:\n{0} \n", imagePath);
-                return;
+                return result;
             }
 
             using (Stream imageStream = File.OpenRead(imagePath))
@@ -85,12 +90,14 @@ namespace ExtractText
                     await computerVision.BatchReadFileInStreamAsync(
                         imageStream);
 
-                await GetTextAsync(computerVision, textHeaders.OperationLocation);
+                result = await Task.FromResult<string>(GetTextAsync(computerVision, textHeaders.OperationLocation).Result);
             }
+
+            return result;
         }
 
         // Retrieve the recognized text
-        private static async Task GetTextAsync(
+        private static async Task<string> GetTextAsync(
             ComputerVisionClient computerVision, string operationLocation)
         {
             // Retrieve the URI where the recognized text will be
@@ -118,14 +125,19 @@ namespace ExtractText
             // Display the results
             Console.WriteLine();
             var recResults = result.RecognitionResults;
+            StringBuilder sb = new StringBuilder();
             foreach (TextRecognitionResult recResult in recResults)
             {
                 foreach (Line line in recResult.Lines)
                 {
-                    Console.WriteLine(line.Text);
+                    // Console.WriteLine(line.Text);
+                    sb.Append(line.Text);
                 }
             }
+
             Console.WriteLine();
+
+            return sb.ToString();
         }
     }
 }
